@@ -4,6 +4,13 @@
 let currentHour = dayjs().hour();
 console.log(currentHour);
 let isPM = false;
+let hoursArr = [];
+if(localStorage.getItem('hasStuff')){
+  hoursArr = JSON.parse(localStorage.getItem('hoursArr'));
+}
+
+
+
 $(function () {
   // TODO: Add a listener for click events on the save button. This code should
   // use the id in the containing time-block as a key to save the user input in
@@ -14,59 +21,80 @@ $(function () {
 
   $root = $('#root');
   $timesheet = $('#timesheet')
-  for(let i = 1; i<25; i++){
-    if(i>12){
-      isPM = false;
-    }else{
-      isPM = true;
-    }
-    let $hour = $(`<div id="hour-${i}">`);
-    if(i === currentHour){
-      $hour.attr('class', 'row time-block present');
-    }else if (i > currentHour){
-      $hour.attr('class', 'row time-block future');
-    }else{
-      $hour.attr('class', 'row time-block past');
-    }
-    let $time = $('<div>')
-    $time.attr('class', 'col-2 col-md-1 hour text-center py-3');
-    if(isPM){
-      if(i === 12){
-        $time.text(`${i} PM`);
+  for(let i = 9; i<21; i++){
+    if(!(localStorage.getItem('hasStuff'))){
+      if(i>12){
+        isPM = false;
       }else{
-        $time.text(`${i} AM`);
+        isPM = true;
       }
-    }else{
-      if(i === 24){
-        $time.text(`${i-12} AM`);
+      let $hour = $(`<div id="hour-${i}">`);
+      if(i === currentHour){
+        $hour.attr('class', 'row time-block present');
+      }else if (i > currentHour){
+        $hour.attr('class', 'row time-block future');
       }else{
-        $time.text(`${i-12} PM`);
+        $hour.attr('class', 'row time-block past');
       }
-    }
-    let $textArea = $('<textarea class="col-8 col-md-10 description" rows="3"> </textarea');
-    let $saveBtn = $('<button>');
-    $saveBtn.attr('class', 'btn saveBtn col-2 col-md-1');
-    $saveBtn.attr('aria-label', 'save');
-    let $btnIcon = $('<i>');
-    $btnIcon.attr('class', 'fas fa-save');
-    if (i >= currentHour){
-      $btnIcon.attr('aria-hidden', 'true');
+      let $time = $('<div>')
+      $time.attr('class', 'col-2 col-md-1 hour text-center py-3');
+      if(isPM){
+        if(i === 12){
+          $time.text(`${i} PM`);
+        }else{
+          $time.text(`${i} AM`);
+        }
+      }else{
+        if(i === 24){
+          $time.text(`${i-12} AM`);
+        }else{
+          $time.text(`${i-12} PM`);
+        }
+      }
+      let $textArea = $('<textarea class="col-8 col-md-10 description" rows="3"> </textarea');
+      let $saveBtn = $('<button>');
+      $saveBtn.attr('class', 'btn saveBtn col-2 col-md-1');
+      $saveBtn.attr('aria-label', 'save');
+      let $btnIcon = $('<i>');
+      $btnIcon.attr('class', 'fas fa-save');
+      if (i >= currentHour){
+        $btnIcon.attr('aria-hidden', 'true');
+      }else{
+        $btnIcon.attr('aria-hidden', 'false');
+      }
+      $saveBtn.append($btnIcon);
+      $hour.append($time, $textArea, $saveBtn)
+      $timesheet.append($hour);
+      let objToAdd = {
+        text: $textArea.text,
+        saveButton: $saveBtn,
+        hourBlock: $hour
+      }
+      hoursArr[i-9] = objToAdd;
     }else{
-      $btnIcon.attr('aria-hidden', 'false');
+      $timesheet.append(hoursArr[i-9].$hour);
     }
-    
-    $saveBtn.append($btnIcon);
-    $hour.append($time, $textArea, $saveBtn)
-    $timesheet.append($hour);
+    //console.log(hoursArr[i]);
+  }
+  localStorage.setItem('hoursArr', JSON.stringify(hoursArr));
+
+  let saveTextToLocal = (event) => {
+    event.preventDefault();
+    let arrToCheck = JSON.parse(localStorage.getItem('hoursArr'));
+    arrToCheck.forEach(element => {
+      if(element.saveButton === event.target){
+        if(event.target.parent().siblings($textArea).text()){
+          element.text = event.target.parent().siblings($textArea).text();
+          if(!(localStorage.getItem('hasStuff'))){
+            localStorage.setItem('hasStuff', true);
+          }
+        }
+      }
+    });
+    localStorage.setItem('hoursArr', JSON.stringify(arrToCheck)); 
   }
   
-  // <div id="hour-9" class="row time-block past">
-  //    <div class="col-2 col-md-1 hour text-center py-3">9AM</div>
-  //    <textarea class="col-8 col-md-10 description" rows="3"> </textarea>
-  //    <button class="btn saveBtn col-2 col-md-1" aria-label="save">
-  //      <i class="fas fa-save" aria-hidden="true"></i>
-  //    </button>
-  // </div>
+  $saveBtn.on('click', saveTextToLocal);
 
   //
   // TODO: Add code to apply the past, present, or future class to each time
